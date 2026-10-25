@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>YT Bot LIVE</title>
+<style>
+  body {
+    background: #000;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  .card {
+    background: #111;
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid red;
+    max-width: 400px;
+    margin: 0 auto;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+  }
+  .status {
+    color: #0f0;
+    font-weight: bold;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+  }
+  .stats {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #aaa;
+    text-align: left;
+    border-top: 1px solid #333;
+    padding-top: 10px;
+  }
+  .stats p {
+    margin: 5px 0;
+  }
+  span {
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<h1>YOUTUBE AUTO BOT LIVE</h1>
+
+<div class="card">
+  <h2 class="status">● ONLINE</h2>
+  <p>Niche: <strong>Horror Stories</strong></p>
+  
+  <div class="stats">
+    <p>Videos Generated: <span id="videosCount">142</span></p>
+    <p>Uploads Today: <span id="uploadsCount">8</span></p>
+    <p>Next Run: <span id="timer">00:45:12</span></p>
+  </div>
+</div>
+
+<script>
+  // Simple live countdown and stats increment simulation
+  let seconds = 2712; // 45 minutes 12 seconds
+  const timerDisplay = document.getElementById('timer');
+  const uploadsDisplay = document.getElementById('uploadsCount');
+  
+  setInterval(() => {
+    if (seconds > 0) {
+      seconds--;
+      let hrs = Math.floor(seconds / 3600);
+      let mins = Math.floor((seconds % 3600) / 60);
+      let secs = seconds % 60;
+      
+      timerDisplay.textContent = 
+        String(hrs).padStart(2, '0') + ':' + 
+        String(mins).padStart(2, '0') + ':' + 
+        String(secs).padStart(2, '0');
+    } else {
+      seconds = 3600; // Reset to 1 hour
+      let currentUploads = parseInt(uploadsDisplay.textContent);
+      uploadsDisplay.textContent = currentUploads + 1;
+    }
+  }, 1000);
+</script>
+
+</body>
+</html>
