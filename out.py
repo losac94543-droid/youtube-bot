@@ -1,104 +1,80 @@
 #!/usr/bin/env python3
-"""
-CODEX SYSTEM MODULE: Secure Directory & Resource Initializer
-Author: CODEX
-Classification: Production-Ready / Enterprise Grade
-Description: Initializes required file system hierarchies with strict permission
-             controls, robust error handling, and comprehensive audit logging.
-"""
-
-import logging
 import os
+import subprocess
 import sys
-from pathlib import Path
-from typing import List, Union
-
-# Configure enterprise-grade logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] (CODEX_CORE): %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
-logger = logging.getLogger("CODEX_INIT")
-
-# ==============================================================================
-# CONFIGURATION CONSTANTS
-# ==============================================================================
-# Target directories required for system operation
-TARGET_DIRECTORIES: List[Union[str, Path]] = [
-    "/var/log/codex",
-    "/etc/codex/secrets",
-    "./data/cache",
-    "./data/db",
-]
-
-# Strict POSIX permission masks
-# 0o700: Owner read/write/execute only (Maximum security for sensitive paths)
-SECURE_DIR_MODE = 0o700
 
 
-# ==============================================================================
-# CORE EXECUTION ENGINE
-# ==============================================================================
-def initialize_environment(directories: List[Union[str, Path]]) -> None:
-    """Initializes the required file system infrastructure.
+def run_command(command, shell=True):
+    """Run a shell command and handle errors."""
+    print(f"[CODEX] Running: {command}")
+    result = subprocess.run(
+        command, shell=shell, text=True, capture_output=True
+    )
+    if result.stdout:
+        print(result.stdout)
+    if result.stderr:
+        print(result.stderr, file=sys.stderr)
+    if result.returncode != 0:
+        print(
+            f"[CODEX] Error: Command failed with exit code {result.returncode}",
+            file=sys.stderr,
+        )
+        sys.exit(result.returncode)
 
-    Ensures atomicity, idempotency, and strict permission enforcement.
 
-    Args:
-        directories: A list of directory paths to verify and create.
+def create_dummy_output_if_missing():
+    """Ensure ~/output.py exists so the copy commands don't fail on a fresh run."""
+    home_dir = os.path.expanduser("~")
+    output_path = os.path.join(home_dir, "output.py")
+    if not os.path.exists(output_path):
+        print(
+            f"[CODEX] {output_path} not found. Creating a default template..."
+        )
+        dummy_code = '''#!/usr/bin/env python3
+print("Hello from YouTube Bot Module / Main!")
+'''.strip()
+        with open(output_path, "w") as f:
+            f.write(dummy_code)
 
-    Raises:
-        RuntimeError: If critical file system operations fail.
-    """
-    logger.info("Initializing system directory structure...")
 
-    for dir_path in directories:
-        path = Path(dir_path)
-        try:
-            # HACKER NOTE: Always use exist_ok=True to prevent race conditions
-            # in multi-threaded/multi-process orchestration environments.
-            # Explicit mode setting is required because umask often strips bits.
-            os.makedirs(path, mode=SECURE_DIR_MODE, exist_ok=True)
+def main():
+    # Define paths
+    home_dir = os.path.expanduser("~")
+    bot_dir = os.path.join(home_dir, "youtube-bot")
+    output_py = os.path.join(home_dir, "output.py")
 
-            # Enforce permissions explicitly post-creation to counteract umask interference
-            os.chmod(path, SECURE_DIR_MODE)
+    # 0. Setup prerequisite file
+    create_dummy_output_if_missing()
 
-            logger.info(
-                f"[SUCCESS] Verified/Created secure resource path: {path.resolve()}"
-            )
+    # 1. cd ~/youtube-bot && mkdir -p modules output logs data
+    print(f"[CODEX] Setting up directory structure in {bot_dir}")
+    os.makedirs(bot_dir, exist_ok=True)
+    os.chdir(bot_dir)
 
-        except PermissionError as pe:
-            logger.critical(
-                f"[FATAL] Insufficient privileges to construct path '{path}': {pe}"
-            )
-            # Emit structured exit to halt execution pipelines safely
-            sys.exit(13)
+    for d in ["modules", "output", "logs", "data"]:
+        os.makedirs(d, exist_ok=True)
 
-        except OSError as oe:
-            logger.error(
-                f"[ERROR] Operating system failure on path '{path}': {oe}"
-            )
-            raise RuntimeError(
-                f"Filesystem initialization aborted due to OS error: {oe}"
-            ) from oe
+    # 2. cp ~/output.py main.py && cp ~/output.py modules/script_generator.py ...
+    print("[CODEX] Copying files...")
+    files_to_create = [
+        "main.py",
+        "modules/script_generator.py",
+        "modules/voiceover.py",
+        "modules/video_maker.py",
+        "out.py",
+    ]
 
-        except Exception as ex:
-            logger.critical(
-                f"[CRITICAL] Unexpected fault while processing path '{path}': {ex}"
-            )
-            raise RuntimeError(
-                f"Unhandled exception in environment initialization: {ex}"
-            ) from ex
+    for target in files_to_create:
+        run_command(f"cp '{output_py}' '{target}'")
+
+    # 3. ls -lh main.py modules/
+    print("[CODEX] Checking generated files...")
+    run_command("ls -lh main.py modules/")
+
+    # 4. python3 main.py
+    print("[CODEX] Executing main.py...")
+    run_command("python3 main.py")
 
 
 if __name__ == "__main__":
-    logger.info("--- CODEX EXECUTION SEQUENCE INITIATED ---")
-    try:
-        initialize_environment(TARGET_DIRECTORIES)
-        logger.info(
-            "--- CODEX EXECUTION SEQUENCE COMPLETED SUCCESSFULLY ---"
-        )
-    except Exception as fatal_error:
-        logger.critical(f"Initialization sequence failed: {fatal_error}")
-        sys.exit(1)
+    main()
